@@ -33,4 +33,8 @@ def create_app():
     def health_alias():
         return {"status": "ok"}, 200
 
+    @app.get('/')
+    def root():
+        return {"service": "eventlync-api", "status": "ok"}, 200
+
     return app
