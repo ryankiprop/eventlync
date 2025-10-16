@@ -26,54 +26,58 @@ def _parse_uuid(value):
 
 class EventsListResource(Resource):
     def get(self):
-        page, per_page = get_pagination_params()
-        q = (request.args.get('q') or '').strip()
-        mine = (request.args.get('mine') or '').lower() in ('1', 'true', 'yes')
-        query = Event.query
-        if q:
-            like = f"%{q}%"
-            query = query.filter(
-                or_(
-                    Event.title.ilike(like),
-                    Event.category.ilike(like),
-                    Event.venue_name.ilike(like),
-                    Event.address.ilike(like),
-                )
-            )
-        if mine:
-            try:
-                verify_jwt_in_request()
-                claims = get_jwt()
-                role = claims.get('role')
-                uid = _parse_uuid(get_jwt_identity())
-                if role == 'admin':
-                    pass
-                elif role == 'organizer' and uid:
-                    query = query.filter(Event.organizer_id == uid)
-                else:
-                    query = query.filter(False)
-            except Exception:
-                query = query.filter(False)
-        query = query.order_by(Event.start_date.desc())
-        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
-        data = events_schema.dump(paginated.items)
         try:
-            claims = get_jwt()
-        except Exception:
-            claims = {}
-        current_app.logger.info(
-            "events.list q=%s mine=%s page=%s per_page=%s total=%s user=%s role=%s",
-            q, mine, page, per_page, paginated.total, get_jwt_identity() if claims else None, (claims or {}).get('role')
-        )
-        return {
-            'items': data,
-            'meta': {
-                'page': paginated.page,
-                'per_page': paginated.per_page,
-                'total': paginated.total,
-                'pages': paginated.pages,
-            }
-        }, 200
+            page, per_page = get_pagination_params()
+            q = (request.args.get('q') or '').strip()
+            mine = (request.args.get('mine') or '').lower() in ('1', 'true', 'yes')
+            query = Event.query
+            if q:
+                like = f"%{q}%"
+                query = query.filter(
+                    or_(
+                        Event.title.ilike(like),
+                        Event.category.ilike(like),
+                        Event.venue_name.ilike(like),
+                        Event.address.ilike(like),
+                    )
+                )
+            if mine:
+                try:
+                    verify_jwt_in_request()
+                    claims = get_jwt()
+                    role = claims.get('role')
+                    uid = _parse_uuid(get_jwt_identity())
+                    if role == 'admin':
+                        pass
+                    elif role == 'organizer' and uid:
+                        query = query.filter(Event.organizer_id == uid)
+                    else:
+                        query = query.filter(False)
+                except Exception:
+                    query = query.filter(False)
+            query = query.order_by(Event.start_date.desc())
+            paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+            data = events_schema.dump(paginated.items)
+            try:
+                claims = get_jwt()
+            except Exception:
+                claims = {}
+            current_app.logger.info(
+                "events.list q=%s mine=%s page=%s per_page=%s total=%s user=%s role=%s",
+                q, mine, page, per_page, paginated.total, get_jwt_identity() if claims else None, (claims or {}).get('role')
+            )
+            return {
+                'items': data,
+                'meta': {
+                    'page': paginated.page,
+                    'per_page': paginated.per_page,
+                    'total': paginated.total,
+                    'pages': paginated.pages,
+                }
+            }, 200
+        except Exception as e:
+            current_app.logger.exception("events.list failed")
+            return {"message": "Internal Server Error"}, 500
 
     @jwt_required()
     def post(self):
