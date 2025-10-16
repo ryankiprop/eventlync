@@ -29,4 +29,8 @@ def create_app():
     def health():
         return {"status": "ok"}, 200
 
+    @app.get('/health')
+    def health_alias():
+        return {"status": "ok"}, 200
+
     return app
