@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade():
     # SQLite does not support many ALTER operations; only add the new columns.
-    op.add_column('order_items', sa.Column('checked_in', sa.Boolean(), nullable=False, server_default=sa.text('0')))
+    op.add_column('order_items', sa.Column('checked_in', sa.Boolean(), nullable=False, server_default=sa.text('false')))
     op.add_column('order_items', sa.Column('checked_in_at', sa.DateTime(), nullable=True))
     # Store UUID as TEXT/BLOB depending on your SQLAlchemy UUID setup; keep as String for SQLite compatibility.
     op.add_column('order_items', sa.Column('checked_in_by', sa.String(length=36), nullable=True))
