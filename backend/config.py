@@ -35,6 +35,11 @@ class Config:
         if scheme == 'postgresql':
             scheme = 'postgresql+psycopg'
 
+        # Enforce SSL for Postgres if not explicitly set
+        if scheme.startswith('postgresql'):
+            if 'sslmode' not in query:
+                query['sslmode'] = ['require']
+
         # Rebuild URL
         url = urlunparse((
             scheme,
