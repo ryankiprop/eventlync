@@ -9,6 +9,8 @@ from .routes import register_routes
 from config import Config
 from .cli import register_cli
 from flask_migrate import upgrade
+from sqlalchemy import inspect
+from .models.payment import Payment
 
 
 def create_app():
@@ -27,6 +29,14 @@ def create_app():
                 upgrade()
         except Exception:
             app.logger.exception("alembic upgrade failed")
+
+    try:
+        with app.app_context():
+            insp = inspect(db.engine)
+            if 'payments' not in insp.get_table_names():
+                Payment.__table__.create(bind=db.engine)
+    except Exception:
+        app.logger.exception("ensure payments table failed")
 
     # Blueprints/Routes
     register_routes(app)

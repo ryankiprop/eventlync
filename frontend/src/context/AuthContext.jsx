@@ -17,22 +17,18 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Enforce logout on every hard reload/tab close: clear any persisted auth now
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    setAuthToken(null)
-    setUser(null)
-    setToken(null)
-
-    // Also ensure clearing on page unload
-    const onUnload = () => {
-      try {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-      } catch {}
-    }
-    window.addEventListener('beforeunload', onUnload)
-    return () => window.removeEventListener('beforeunload', onUnload)
+    // Restore persisted auth on refresh
+    try {
+      const t = localStorage.getItem('token')
+      const u = localStorage.getItem('user')
+      if (t) {
+        setToken(t)
+        setAuthToken(t)
+      }
+      if (u) {
+        setUser(JSON.parse(u))
+      }
+    } catch {}
   }, [])
 
   const login = async (values) => {
