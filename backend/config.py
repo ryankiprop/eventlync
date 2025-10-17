@@ -21,7 +21,11 @@ class Config:
         'max_overflow': 10,
         'connect_args': {
             'connect_timeout': 5,
-            'sslmode': 'require'
+            'sslmode': 'require',
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 5
         }
     }
     

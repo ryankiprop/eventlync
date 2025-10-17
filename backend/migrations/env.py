@@ -96,12 +96,16 @@ def run_migrations_online():
 
     connectable = get_engine()
     
-    # Apply Neon-specific connection settings
+    # Enhanced Neon PostgreSQL configuration
     if 'postgresql' in str(connectable.url):
         connectable = connectable.execution_options(
+            pool_pre_ping=True,
             connect_args={
-                'connect_timeout': 5,
-                'sslmode': 'require'
+                'connect_timeout': 10,  # Increased timeout for migrations
+                'sslmode': 'require',
+                'keepalives': 1,
+                'keepalives_idle': 30,
+                'keepalives_interval': 10
             }
         )
     
