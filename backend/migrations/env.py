@@ -95,20 +95,7 @@ def run_migrations_online():
         conf_args["process_revision_directives"] = process_revision_directives
 
     connectable = get_engine()
-    
-    # Enhanced Neon PostgreSQL configuration
-    if 'postgresql' in str(connectable.url):
-        connectable = connectable.execution_options(
-            pool_pre_ping=True,
-            connect_args={
-                'connect_timeout': 10,  # Increased timeout for migrations
-                'sslmode': 'require',
-                'keepalives': 1,
-                'keepalives_idle': 30,
-                'keepalives_interval': 10
-            }
-        )
-    
+
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
