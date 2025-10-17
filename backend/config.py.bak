@@ -13,7 +13,7 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Configure PostgreSQL-specific settings for Neon
+    # Configure PostgreSQL-specific settings
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 300,
