@@ -54,28 +54,6 @@ export default function EventDetails() {
       setStatus({ err: 'Please login to purchase tickets.' })
       return
     }
-
-  const onPurchase = async () => {
-    if (!user) {
-      setStatus({ err: 'Please login to purchase tickets.' })
-      return
-    }
-    if (!cartItems.length) {
-      setStatus({ err: 'Select at least one ticket.' })
-      return
-    }
-    setSubmitting(true)
-    setStatus(null)
-    try {
-      const res = await createOrder({ event_id: event.id, items: cartItems })
-      setCartItems([])
-      navigate(`/orders/${res.order.id}/confirmation`)
-    } catch (e) {
-      setStatus({ err: e?.response?.data?.message || 'Checkout failed' })
-    } finally {
-      setSubmitting(false)
-    }
-  }
     if (!cartItems.length) {
       setStatus({ err: 'Select at least one ticket.' })
       return
@@ -114,6 +92,28 @@ export default function EventDetails() {
     } catch (e) {
       setMpesaPending(false)
       setStatus({ err: e?.response?.data?.message || 'Failed to initiate M-Pesa payment' })
+    }
+  }
+
+  const onPurchase = async () => {
+    if (!user) {
+      setStatus({ err: 'Please login to purchase tickets.' })
+      return
+    }
+    if (!cartItems.length) {
+      setStatus({ err: 'Select at least one ticket.' })
+      return
+    }
+    setSubmitting(true)
+    setStatus(null)
+    try {
+      const res = await createOrder({ event_id: event.id, items: cartItems })
+      setCartItems([])
+      navigate(`/orders/${res.order.id}/confirmation`)
+    } catch (e) {
+      setStatus({ err: e?.response?.data?.message || 'Checkout failed' })
+    } finally {
+      setSubmitting(false)
     }
   }
 
