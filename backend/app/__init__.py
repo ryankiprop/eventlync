@@ -11,6 +11,7 @@ from .cli import register_cli
 from flask_migrate import upgrade
 from sqlalchemy import inspect
 from .models.payment import Payment
+import inspect as pyinspect
 
 
 def create_app():
@@ -23,20 +24,31 @@ def create_app():
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    if (os.environ.get('RUN_MIGRATIONS_ON_START') or '').lower() in ('1', 'true', 'yes'):
+    def _called_from_alembic_env():
+        try:
+            for f in pyinspect.stack():
+                fname = f.filename.replace('\\', '/') if f and getattr(f, 'filename', None) else ''
+                if fname.endswith('/migrations/env.py'):
+                    return True
+        except Exception:
+            pass
+        return False
+
+    if not _called_from_alembic_env() and (os.environ.get('RUN_MIGRATIONS_ON_START') or '').lower() in ('1', 'true', 'yes'):
         try:
             with app.app_context():
                 upgrade()
         except Exception:
             app.logger.exception("alembic upgrade failed")
 
-    try:
-        with app.app_context():
-            insp = inspect(db.engine)
-            if 'payments' not in insp.get_table_names():
-                Payment.__table__.create(bind=db.engine)
-    except Exception:
-        app.logger.exception("ensure payments table failed")
+    if not _called_from_alembic_env():
+        try:
+            with app.app_context():
+                insp = inspect(db.engine)
+                if 'payments' not in insp.get_table_names():
+                    Payment.__table__.create(bind=db.engine)
+        except Exception:
+            app.logger.exception("ensure payments table failed")
 
     # Blueprints/Routes
     register_routes(app)
