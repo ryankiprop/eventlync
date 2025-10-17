@@ -30,20 +30,10 @@ class Config:
 
         # Remove channel_binding if present (Neon sometimes adds it)
         query.pop('channel_binding', None)
-
-        # Ensure psycopg3 dialect
-        if scheme == 'postgresql':
-            scheme = 'postgresql+psycopg'
-
-        # Enforce SSL for Postgres if not explicitly set
-        if scheme.startswith('postgresql'):
-            if 'sslmode' not in query:
-                query['sslmode'] = ['require']
-
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Add connection pool and SSL settings
-    if db_url.startswith('postgresql+psycopg2://'):
+    # Configure PostgreSQL-specific settings if using PostgreSQL
+    if SQLALCHEMY_DATABASE_URI.startswith('postgresql+psycopg2://'):
         SQLALCHEMY_ENGINE_OPTIONS = {
             'pool_pre_ping': True,
             'pool_recycle': 300,
