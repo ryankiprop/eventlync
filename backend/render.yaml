@@ -1,0 +1,19 @@
+# render.yaml
+services:
+  eventlync-backend:
+    name: eventlync-backend
+    type: web
+    env: python
+    runtime: python-3.11.8
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+      flask db upgrade
+    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql+psycopg2://neondb_owner:npg_oVhL5pN9BblI@ep-withered-resonance-adm7679h-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_APP
+        value: run.py
