@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -7,6 +8,7 @@ from .extensions import db, migrate, jwt
 from .routes import register_routes
 from config import Config
 from .cli import register_cli
+from flask_migrate import upgrade
 
 
 def create_app():
@@ -18,6 +20,13 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+
+    if (os.environ.get('RUN_MIGRATIONS_ON_START') or '').lower() in ('1', 'true', 'yes'):
+        try:
+            with app.app_context():
+                upgrade()
+        except Exception:
+            app.logger.exception("alembic upgrade failed")
 
     # Blueprints/Routes
     register_routes(app)
