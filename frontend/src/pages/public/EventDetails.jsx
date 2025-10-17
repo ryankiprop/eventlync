@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { fetchEvent } from '../../services/events'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import TicketSelector from '../../components/events/TicketSelector'
@@ -10,6 +10,7 @@ import TicketManager from '../../components/events/TicketManager'
 export default function EventDetails() {
   const { id } = useParams()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -57,8 +58,8 @@ export default function EventDetails() {
     setStatus(null)
     try {
       const res = await createOrder({ event_id: event.id, items: cartItems })
-      setStatus({ ok: `Order placed. Total $${(res.order?.total_amount||0)/100}` })
       setCartItems([])
+      navigate(`/orders/${res.order.id}/confirmation`)
     } catch (e) {
       setStatus({ err: e?.response?.data?.message || 'Checkout failed' })
     } finally {

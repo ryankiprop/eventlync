@@ -4,9 +4,12 @@ from sendgrid.helpers.mail import Mail
 
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+FREE_MODE = (os.getenv('FREE_MODE') or '').lower() in ('1', 'true', 'yes')
 
 
 def send_email(to_email: str, subject: str, html_content: str):
+    if FREE_MODE:
+        return False
     if not SENDGRID_API_KEY:
         return False
     message = Mail(

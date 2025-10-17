@@ -22,13 +22,15 @@ export default function Checkin() {
       s.id = 'html5qrcode-cdn'
       document.body.appendChild(s)
     }
+    return () => { mounted = false }
+  }, [])
 
   const markUsed = async () => {
     if (!result?.valid || !code) return
     try {
       setLoading(true)
       setError(null)
-      const res = await api.post('/checkin/mark', { event_id: id, code })
+      await api.post('/checkin/mark', { event_id: id, code })
       // refresh verification to show updated state
       const verify = await api.post('/checkin/verify', { event_id: id, code })
       setResult(verify.data)
@@ -38,8 +40,6 @@ export default function Checkin() {
       setLoading(false)
     }
   }
-    return () => { mounted = false }
-  }, [])
 
   const onVerify = async (e) => {
     e.preventDefault()
