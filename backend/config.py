@@ -5,7 +5,16 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:////tmp/eventlync.db'
+    _raw_db_url = os.environ.get('DATABASE_URL')
+    if _raw_db_url:
+        url = _raw_db_url
+        if url.startswith('postgres://'):
+            url = 'postgresql://' + url[len('postgres://'):]
+        if url.startswith('postgresql://'):
+            url = 'postgresql+psycopg://' + url[len('postgresql://'):]
+        SQLALCHEMY_DATABASE_URI = url
+    else:
+        SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/eventlync.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key'
     CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
