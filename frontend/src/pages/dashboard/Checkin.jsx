@@ -9,18 +9,29 @@ export default function Checkin() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [scriptLoaded, setScriptLoaded] = useState(!!window.Html5Qrcode)
   const scannerRef = useRef(null)
   const html5qrcodeRef = useRef(null)
 
   // Lazy load html5-qrcode from CDN once
   useEffect(() => {
     let mounted = true
-    if (!window.Html5Qrcode && !document.getElementById('html5qrcode-cdn')) {
-      const s = document.createElement('script')
-      s.src = 'https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js'
-      s.async = true
-      s.id = 'html5qrcode-cdn'
-      document.body.appendChild(s)
+    if (window.Html5Qrcode) {
+      setScriptLoaded(true)
+    } else {
+      let script = document.getElementById('html5qrcode-cdn')
+      if (!script) {
+        script = document.createElement('script')
+        script.src = 'https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js'
+        script.async = true
+        script.id = 'html5qrcode-cdn'
+        document.body.appendChild(script)
+      }
+      const onLoad = () => { if (mounted) setScriptLoaded(true) }
+      script.addEventListener('load', onLoad)
+      // in case it was cached and load already fired
+      if (window.Html5Qrcode) setScriptLoaded(true)
+      return () => { script.removeEventListener('load', onLoad) }
     }
     return () => { mounted = false }
   }, [])
@@ -57,8 +68,8 @@ export default function Checkin() {
   }
 
   const startScan = async () => {
-    if (!window.Html5Qrcode) {
-      setError('Scanner library not loaded yet. Please wait a moment and retry.')
+    if (!scriptLoaded || !window.Html5Qrcode) {
+      setError('Scanner is still loading. Please wait a moment and try again.')
       return
     }
     try {
