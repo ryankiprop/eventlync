@@ -38,7 +38,7 @@ def create_app():
         try:
             with app.app_context():
                 upgrade()
-        except Exception:
+        except BaseException:
             app.logger.exception("alembic upgrade failed")
 
     if not _called_from_alembic_env():
