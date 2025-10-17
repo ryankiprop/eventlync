@@ -4,6 +4,7 @@ import { fetchEvent } from '../../services/events'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import TicketSelector from '../../components/events/TicketSelector'
 import { createOrder } from '../../services/orders'
+import { initiateMpesa, getPayment } from '../../services/payments'
 import { useAuth } from '../../context/AuthContext'
 import TicketManager from '../../components/events/TicketManager'
 
@@ -15,9 +16,12 @@ export default function EventDetails() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [cartItems, setCartItems] = useState([])
-  const [submitting, setSubmitting] = useState(false)
   const [status, setStatus] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const [ticketTypes, setTicketTypes] = useState([])
+  const [phone, setPhone] = useState('')
+  const [mpesaPending, setMpesaPending] = useState(false)
+  const [mpesaPaymentId, setMpesaPaymentId] = useState(null)
 
   useEffect(() => {
     let mounted = true
@@ -45,6 +49,12 @@ export default function EventDetails() {
     return sum + ((tt?.price || 0) * (it.quantity || 0))
   }, 0)
 
+  const onPayMpesa = async () => {
+    if (!user) {
+      setStatus({ err: 'Please login to purchase tickets.' })
+      return
+    }
+
   const onPurchase = async () => {
     if (!user) {
       setStatus({ err: 'Please login to purchase tickets.' })
@@ -64,6 +74,46 @@ export default function EventDetails() {
       setStatus({ err: e?.response?.data?.message || 'Checkout failed' })
     } finally {
       setSubmitting(false)
+    }
+  }
+    if (!cartItems.length) {
+      setStatus({ err: 'Select at least one ticket.' })
+      return
+    }
+    if (!/^2547\d{8}$/.test(phone.trim())) {
+      setStatus({ err: 'Enter phone in format 2547XXXXXXXX' })
+      return
+    }
+    setStatus(null)
+    setMpesaPending(true)
+    try {
+      const res = await initiateMpesa({ event_id: event.id, phone: phone.trim(), items: cartItems })
+      const pid = res?.payment?.id
+      const oid = res?.order?.id
+      setMpesaPaymentId(pid)
+      // poll status until success/failed or timeout ~2 minutes
+      const started = Date.now()
+      const poll = async () => {
+        try {
+          const st = await getPayment(pid)
+          const statusVal = st?.payment?.status
+          if (statusVal === 'success') {
+            setMpesaPending(false)
+            navigate(`/orders/${oid}/confirmation`)
+            return
+          }
+          if (statusVal === 'failed' || Date.now() - started > 120000) {
+            setMpesaPending(false)
+            setStatus({ err: 'Payment not completed. You can try again.' })
+            return
+          }
+        } catch {}
+        setTimeout(poll, 3000)
+      }
+      poll()
+    } catch (e) {
+      setMpesaPending(false)
+      setStatus({ err: e?.response?.data?.message || 'Failed to initiate M-Pesa payment' })
     }
   }
 
@@ -87,10 +137,23 @@ export default function EventDetails() {
               <h2 className="text-lg font-semibold mb-2">Tickets</h2>
               <TicketSelector eventId={event.id} onChange={(items, tickets) => { setCartItems(items); setTicketTypes(tickets || []) }} />
               <div className="flex items-center justify-between mt-4">
-                <div className="text-lg font-medium">Total ${totalCents/100}</div>
-                <button onClick={onPurchase} disabled={submitting} className="bg-primary-600 text-white px-4 py-2 rounded">
-                  {submitting ? 'Processing...' : 'Purchase'}
-                </button>
+                <div className="text-lg font-medium">Total KES {totalCents/100}</div>
+                <div className="flex items-center gap-2">
+                  {import.meta.env.VITE_ENABLE_FREE_CHECKOUT === 'true' && (
+                    <button onClick={onPurchase} disabled={submitting || mpesaPending} className="bg-gray-200 text-gray-800 px-4 py-2 rounded">
+                      {submitting ? 'Processing…' : 'Free Checkout (dev)'}
+                    </button>
+                  )}
+                  <input
+                    className="border rounded px-3 py-2 w-56"
+                    placeholder="2547XXXXXXXX"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                  <button onClick={onPayMpesa} disabled={mpesaPending} className="bg-primary-600 text-white px-4 py-2 rounded">
+                    {mpesaPending ? 'Waiting for M-Pesa…' : 'Pay with M-Pesa'}
+                  </button>
+                </div>
               </div>
               {status?.err && <div className="text-red-600 mt-2">{status.err}</div>}
               {status?.ok && <div className="text-green-700 mt-2">{status.ok}</div>}

@@ -1,3 +1,4 @@
+import os
 from uuid import UUID as _UUID
 from flask import request
 from flask_restful import Resource
@@ -12,6 +13,7 @@ from ..utils.qrcode_util import generate_ticket_qr
 order_schema = OrderSchema()
 orders_schema = OrderSchema(many=True)
 create_order_schema = CreateOrderSchema()
+FREE_MODE = (os.getenv('FREE_MODE') or '').lower() in ('1', 'true', 'yes')
 
 
 def _uuid(v):
@@ -24,6 +26,8 @@ def _uuid(v):
 class OrdersResource(Resource):
     @jwt_required()
     def post(self):
+        if not FREE_MODE:
+            return {"message": "Direct checkout is disabled. Use /api/payments/mpesa/initiate."}, 400
         json_data = request.get_json() or {}
         errors = create_order_schema.validate(json_data)
         if errors:
