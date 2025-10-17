@@ -40,22 +40,25 @@ class Config:
             if 'sslmode' not in query:
                 query['sslmode'] = ['require']
 
-        # Rebuild URL
-        url = urlunparse((
-            scheme,
-            netloc,
-            path,
-            '',
-            urlencode(query, doseq=True),
-            ''
-        ))
-        SQLALCHEMY_DATABASE_URI = url
-    else:
-        SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/eventlync.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key'
+    
+    # Add connection pool and SSL settings
+    if db_url.startswith('postgresql+psycopg2://'):
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_size': 5,
+            'max_overflow': 10,
+            'connect_args': {
+                'connect_timeout': 5,
+                'sslmode': 'disable'  # Disable SSL for now
+            }
+        }
+    
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-change-me')
+    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 3600))
     CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
     CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
     CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
     SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
-    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')

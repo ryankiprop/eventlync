@@ -38,23 +38,59 @@ def create_app():
         try:
             with app.app_context():
                 upgrade()
-        except BaseException:
-            app.logger.exception("alembic upgrade failed")
-
-    if not _called_from_alembic_env():
-        try:
-            with app.app_context():
-                insp = inspect(db.engine)
-                if 'payments' not in insp.get_table_names():
-                    Payment.__table__.create(bind=db.engine)
-        except Exception:
-            app.logger.exception("ensure payments table failed")
-
-    # Blueprints/Routes
+        except Exception as e:
+            app.logger.error(f"Migration failed: {str(e)}")
+    
+    # Register routes
     register_routes(app)
 
-    # CLI commands
-    register_cli(app)
+    # Create upload folder if it doesn't exist
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+    # Ensure database tables exist
+    with app.app_context():
+        try:
+            # This will create any tables that don't exist
+            db.create_all()
+            app.logger.info("Database tables verified/created successfully")
+        except Exception as e:
+            app.logger.error(f"Error initializing database: {str(e)}")
+            # Don't raise here to allow the app to start in read-only mode
+
+    @app.route('/health')
+    def health_check():
+        try:
+            # Test database connection
+            db.session.execute('SELECT 1')
+            return jsonify({
+                "status": "healthy",
+                "database": "connected"
+            }), 200
+        except Exception as e:
+            app.logger.error(f"Health check failed: {str(e)}")
+            return jsonify({
+                "status": "unhealthy",
+                "database": "disconnected",
+                "error": str(e)
+            }), 500
+
+    @app.route('/')
+    def index():
+        return jsonify({
+            "name": "EventLync API",
+            "status": "running",
+            "version": "1.0.0"
+        })
+
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({"error": "Not found"}), 404
+
+    @app.errorhandler(500)
+    def server_error(error):
+        app.logger.error(f"Server error: {str(error)}")
+        return jsonify({"error": "Internal server error"}), 500
 
     @app.get('/api/health')
     def health():
