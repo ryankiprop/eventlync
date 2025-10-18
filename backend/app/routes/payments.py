@@ -158,3 +158,18 @@ class MpesaCallbackResource(Resource):
             p.status = 'failed'
         db.session.commit()
         return {"message": "ok"}, 200
+
+
+class MpesaTestEnvResource(Resource):
+    def get(self):
+        """Test endpoint to check M-Pesa environment variables"""
+        import os
+        env_vars = {
+            'MPESA_ENV': os.getenv('MPESA_ENV'),
+            'MPESA_CONSUMER_KEY': '***' + os.getenv('MPESA_CONSUMER_KEY', '')[-4:] if os.getenv('MPESA_CONSUMER_KEY') else None,
+            'MPESA_CONSUMER_SECRET': '***' + os.getenv('MPESA_CONSUMER_SECRET', '')[-4:] if os.getenv('MPESA_CONSUMER_SECRET') else None,
+            'MPESA_SHORT_CODE': os.getenv('MPESA_SHORT_CODE'),
+            'MPESA_PASSKEY': '***' + os.getenv('MPESA_PASSKEY', '')[-4:] if os.getenv('MPESA_PASSKEY') else None,
+            'MPESA_CALLBACK_URL': os.getenv('MPESA_CALLBACK_URL')
+        }
+        return env_vars, 200

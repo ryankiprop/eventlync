@@ -11,7 +11,7 @@ from .dashboard import OrganizerDashboardResource, AdminDashboardResource
 from .users import UsersListResource, UserRoleResource
 from .swagger import SwaggerSpecResource
 from .uploads import ImageUploadResource
-from .payments import MpesaInitiateResource, MpesaCallbackResource, PaymentStatusResource
+from .payments import MpesaInitiateResource, MpesaCallbackResource, PaymentStatusResource, MpesaTestEnvResource
 
 
 def register_routes(app):
@@ -44,6 +44,7 @@ def register_routes(app):
     api.add_resource(MpesaInitiateResource, '/payments/mpesa/initiate')
     api.add_resource(PaymentStatusResource, '/payments/<string:payment_id>')
     api.add_resource(MpesaCallbackResource, '/payments/mpesa/callback')
+    api.add_resource(MpesaTestEnvResource, '/payments/mpesa/test-env')
 
     # Dashboard endpoints
     api.add_resource(OrganizerDashboardResource, '/dashboard/organizer')
