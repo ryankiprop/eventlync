@@ -4,12 +4,14 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from .extensions import db, migrate, jwt
 from .routes import register_routes
 from config import Config
 from .cli import register_cli
 from flask_migrate import upgrade
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 from .models.payment import Payment
 import inspect as pyinspect
 
@@ -18,8 +20,14 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Extensions
-    CORS(app, supports_credentials=True, origins=[app.config.get('FRONTEND_URL', '*')])
+    # Initialize extensions
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["200 per day", "50 per hour"],
+        storage_uri="memory://",
+    )
+    CORS(app, supports_credentials=True, origins=app.config['CORS_ORIGINS'])
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
@@ -61,7 +69,7 @@ def create_app():
     def health_check():
         try:
             # Test database connection
-            db.session.execute('SELECT 1')
+            db.session.execute(text('SELECT 1'))
             return jsonify({
                 "status": "healthy",
                 "database": "connected"
@@ -99,9 +107,5 @@ def create_app():
     @app.get('/health')
     def health_alias():
         return {"status": "ok"}, 200
-
-    @app.get('/')
-    def root():
-        return {"service": "eventlync-api", "status": "ok"}, 200
 
     return app

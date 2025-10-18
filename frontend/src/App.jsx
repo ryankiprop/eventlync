@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import Events from './pages/public/Events'
@@ -24,29 +25,31 @@ function PrivateRoute({ children }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/register-organizer" element={<RegisterOrganizer />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/events/:id" element={<EventDetails />} />
-            <Route path="/create-event" element={<CreateEvent />} />
-            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/dashboard/my-events" element={<PrivateRoute><MyEvents /></PrivateRoute>} />
-            <Route path="/dashboard/my-tickets" element={<PrivateRoute><MyTickets /></PrivateRoute>} />
-            <Route path="/dashboard/manage-users" element={<PrivateRoute><ManageUsers /></PrivateRoute>} />
-            <Route path="/dashboard/events/:id/edit" element={<PrivateRoute><EditEvent /></PrivateRoute>} />
-            <Route path="/dashboard/events/:id/orders" element={<PrivateRoute><EventOrders /></PrivateRoute>} />
-            <Route path="/dashboard/events/:id/checkin" element={<PrivateRoute><Checkin /></PrivateRoute>} />
-            <Route path="/orders/:id/confirmation" element={<PrivateRoute><OrderConfirmation /></PrivateRoute>} />
-            <Route path="/" element={<Home />} />
-          </Routes>
+    <ErrorBoundary>
+      <AuthProvider>
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <div className="flex-1">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/register-organizer" element={<RegisterOrganizer />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/events/:id" element={<EventDetails />} />
+              <Route path="/create-event" element={<CreateEvent />} />
+              <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="/dashboard/my-events" element={<PrivateRoute><MyEvents /></PrivateRoute>} />
+              <Route path="/dashboard/my-tickets" element={<PrivateRoute><MyTickets /></PrivateRoute>} />
+              <Route path="/dashboard/manage-users" element={<PrivateRoute><ManageUsers /></PrivateRoute>} />
+              <Route path="/dashboard/events/:id/edit" element={<PrivateRoute><EditEvent /></PrivateRoute>} />
+              <Route path="/dashboard/events/:id/orders" element={<PrivateRoute><EventOrders /></PrivateRoute>} />
+              <Route path="/dashboard/events/:id/checkin" element={<PrivateRoute><Checkin /></PrivateRoute>} />
+              <Route path="/orders/:id/confirmation" element={<PrivateRoute><OrderConfirmation /></PrivateRoute>} />
+              <Route path="/" element={<Home />} />
+            </Routes>
+          </div>
         </div>
-      </div>
-    </AuthProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }

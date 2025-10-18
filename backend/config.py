@@ -9,7 +9,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
     
     # Database configuration for Neon PostgreSQL
-    SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://neondb_owner:npg_oVhL5pN9BblI@ep-withered-resonance-adm7679h-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'postgresql+psycopg2://neondb_owner:npg_oVhL5pN9BblI@ep-withered-resonance-adm7679h-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require'
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
@@ -30,7 +30,9 @@ class Config:
     }
     
     # JWT Configuration
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-change-me')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+    if not JWT_SECRET_KEY:
+        raise ValueError("JWT_SECRET_KEY environment variable is required")
     JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 3600))
     
     # Cloudinary Configuration
@@ -48,11 +50,13 @@ class Config:
     # File Uploads
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload size
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     
     # CORS Configuration
-    CORS_ORIGINS = os.getenv('CORS_ORIGINS', FRONTEND_URL)
-    if CORS_ORIGINS:
+    CORS_ORIGINS = os.getenv('CORS_ORIGINS')
+    if not CORS_ORIGINS:
+        CORS_ORIGINS = [FRONTEND_URL]
+    else:
         CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS.split(',')]
     
     # Session Configuration
