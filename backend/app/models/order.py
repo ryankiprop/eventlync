@@ -32,6 +32,5 @@ class OrderItem(db.Model):
     checked_in_at = db.Column(db.DateTime)
     checked_in_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'))
 
-    order = db.relationship('Order', backref=db.backref('order_items', lazy=True))
     ticket_type = db.relationship('TicketType', backref=db.backref('order_items', lazy=True))
     checked_in_by_user = db.relationship('User', foreign_keys=[checked_in_by])
