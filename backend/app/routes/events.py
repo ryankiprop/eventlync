@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from ..extensions import db
 from ..models import Event
 from ..models.ticket import TicketType
-from ..models.order import Order
+from ..models.order import Order, OrderItem
 from ..schemas.event_schema import EventSchema, EventCreateSchema, EventUpdateSchema
 from ..utils.pagination import get_pagination_params
 
