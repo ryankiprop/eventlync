@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchEvents, updateEvent } from '../../services/events'
+import { fetchEvents, updateEvent, deleteEvent } from '../../services/events'
 import EventForm from '../../components/events/EventForm'
 import { Link } from 'react-router-dom'
 
@@ -60,7 +60,20 @@ export default function MyEvents() {
                     )}
                     <Link to={`/dashboard/events/${ev.id}/edit`} className="px-3 py-1 border rounded">Edit</Link>
                     <Link to={`/dashboard/events/${ev.id}/orders`} className="px-3 py-1 border rounded">Attendees</Link>
-            <Link to={`/dashboard/events/${ev.id}/checkin`} className="px-3 py-1 border rounded">Check-in</Link>
+                    <Link to={`/dashboard/events/${ev.id}/checkin`} className="px-3 py-1 border rounded">Check-in</Link>
+                    <button
+                      className="px-3 py-1 border border-red-300 text-red-600 rounded hover:bg-red-50"
+                      onClick={async () => {
+                        if (window.confirm(`Are you sure you want to delete "${ev.title}"? This action cannot be undone.`)) {
+                          try {
+                            await deleteEvent(ev.id)
+                            load()
+                          } catch (e) {
+                            alert('Failed to delete event')
+                          }
+                        }
+                      }}
+                    >Delete</button>
                   </div>
                 </div>
               </li>

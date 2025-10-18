@@ -1,5 +1,6 @@
 import os
 from uuid import UUID as _UUID
+from datetime import datetime
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
@@ -212,6 +213,113 @@ class MarkCheckinResource(Resource):
 
         return {
             "message": "Checked in",
+            "order_item": {
+                "id": str(oi.id),
+                "checked_in": True,
+                "checked_in_at": oi.checked_in_at.isoformat() if oi.checked_in_at else None,
+                "checked_in_by": str(oi.checked_in_by) if oi.checked_in_by else None,
+            }
+        }, 200
+
+
+class VerifyCheckinResource(Resource):
+    @jwt_required()
+    def post(self):
+        json_data = request.get_json() or {}
+        event_id = _uuid(json_data.get('event_id'))
+        code = (json_data.get('code') or '').strip()
+        if not event_id or not code:
+            return {"valid": False, "message": "Missing event_id or code"}, 400
+
+        claims = get_jwt()
+        role = claims.get('role')
+        uid = _uuid(get_jwt_identity())
+
+        # Only organizers/admins can check in for their events
+        if role not in ('organizer', 'admin'):
+            return {"valid": False, "message": "Forbidden"}, 403
+
+        # Find order item with matching QR code for this event
+        oi = (
+            OrderItem.query
+            .join(Order)
+            .filter(Order.event_id == event_id)
+            .filter(OrderItem.qr_code == code)
+            .first()
+        )
+
+        if not oi:
+            return {"valid": False, "message": "Invalid code"}, 404
+
+        # Check if user has permission for this event
+        if role == 'organizer' and oi.order.event.organizer_id != uid:
+            return {"valid": False, "message": "Forbidden"}, 403
+
+        return {
+            "valid": True,
+            "order": {
+                "id": str(oi.order.id),
+                "user_id": str(oi.order.user_id),
+                "total_amount": oi.order.total_amount,
+                "status": oi.order.status,
+                "created_at": oi.order.created_at.isoformat() if oi.order.created_at else None,
+            },
+            "order_item": {
+                "id": str(oi.id),
+                "ticket_type_id": str(oi.ticket_type_id),
+                "quantity": oi.quantity,
+                "unit_price": oi.unit_price,
+                "qr_code": oi.qr_code,
+                "checked_in": bool(oi.checked_in),
+                "checked_in_at": oi.checked_in_at.isoformat() if oi.checked_in_at else None,
+                "checked_in_by": str(oi.checked_in_by) if oi.checked_in_by else None,
+            }
+        }, 200
+
+
+class MarkCheckinResource(Resource):
+    @jwt_required()
+    def post(self):
+        json_data = request.get_json() or {}
+        event_id = _uuid(json_data.get('event_id'))
+        code = (json_data.get('code') or '').strip()
+        if not event_id or not code:
+            return {"message": "Missing event_id or code"}, 400
+
+        claims = get_jwt()
+        role = claims.get('role')
+        uid = _uuid(get_jwt_identity())
+
+        # Only organizers/admins can check in for their events
+        if role not in ('organizer', 'admin'):
+            return {"message": "Forbidden"}, 403
+
+        # Find order item with matching QR code for this event
+        oi = (
+            OrderItem.query
+            .join(Order)
+            .filter(Order.event_id == event_id)
+            .filter(OrderItem.qr_code == code)
+            .first()
+        )
+
+        if not oi:
+            return {"message": "Invalid code"}, 404
+
+        # Check if user has permission for this event
+        if role == 'organizer' and oi.order.event.organizer_id != uid:
+            return {"message": "Forbidden"}, 403
+
+        if oi.checked_in:
+            return {"message": "Already checked in", "already": True}, 400
+
+        oi.checked_in = True
+        oi.checked_in_at = datetime.utcnow()
+        oi.checked_in_by = uid
+        db.session.commit()
+
+        return {
+            "message": "Checked in successfully",
             "order_item": {
                 "id": str(oi.id),
                 "checked_in": True,
