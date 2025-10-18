@@ -16,7 +16,7 @@ class TicketType(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    event = db.relationship('Event', backref=db.backref('ticket_types', lazy=True), cascade="all, delete-orphan")
+    event = db.relationship('Event', backref=db.backref('ticket_types', lazy=True))
 
     @property
     def quantity_available(self):

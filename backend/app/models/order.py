@@ -15,7 +15,7 @@ class Order(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('orders', lazy=True))
-    event = db.relationship('Event', backref=db.backref('orders', lazy=True), cascade="all, delete-orphan")
+    event = db.relationship('Event', backref=db.backref('orders', lazy=True))
     items = db.relationship('OrderItem', backref=db.backref('order', lazy=True), cascade="all, delete-orphan")
 
 
