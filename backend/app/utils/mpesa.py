@@ -11,20 +11,22 @@ SHORT_CODE = os.getenv('MPESA_SHORT_CODE', '')
 PASSKEY = os.getenv('MPESA_PASSKEY', '')
 CALLBACK_URL = os.getenv('MPESA_CALLBACK_URL', '')
 
-# Validate required environment variables
-if not CONSUMER_KEY:
-    raise ValueError("MPESA_CONSUMER_KEY environment variable is required")
-if not CONSUMER_SECRET:
-    raise ValueError("MPESA_CONSUMER_SECRET environment variable is required")
-if not SHORT_CODE:
-    raise ValueError("MPESA_SHORT_CODE environment variable is required")
-if not PASSKEY:
-    raise ValueError("MPESA_PASSKEY environment variable is required")
-if not CALLBACK_URL:
-    raise ValueError("MPESA_CALLBACK_URL environment variable is required")
-
 TOKEN_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials' if MPESA_ENV == 'sandbox' else 'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
 STK_URL = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest' if MPESA_ENV == 'sandbox' else 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
+
+
+def _validate_config():
+    """Validate that all required M-Pesa environment variables are set"""
+    if not CONSUMER_KEY:
+        raise ValueError("MPESA_CONSUMER_KEY environment variable is required")
+    if not CONSUMER_SECRET:
+        raise ValueError("MPESA_CONSUMER_SECRET environment variable is required")
+    if not SHORT_CODE:
+        raise ValueError("MPESA_SHORT_CODE environment variable is required")
+    if not PASSKEY:
+        raise ValueError("MPESA_PASSKEY environment variable is required")
+    if not CALLBACK_URL:
+        raise ValueError("MPESA_CALLBACK_URL environment variable is required")
 
 
 def _timestamp():
@@ -38,6 +40,7 @@ def _password():
 
 
 def get_access_token():
+    _validate_config()
     auth = (CONSUMER_KEY, CONSUMER_SECRET)
     resp = requests.get(TOKEN_URL, auth=auth, timeout=15)
     resp.raise_for_status()
@@ -45,6 +48,7 @@ def get_access_token():
 
 
 def initiate_stk_push(phone_msisdn: str, amount_kes: int, account_ref: str, description: str):
+    _validate_config()
     token = get_access_token()
     password, ts = _password()
     headers = {
