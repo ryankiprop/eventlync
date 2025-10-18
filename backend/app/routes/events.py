@@ -157,6 +157,16 @@ class EventResource(Resource):
         uid = _parse_uuid(get_jwt_identity())
         if role != 'admin' and (not uid or ev.organizer_id != uid):
             return {"message": "Forbidden"}, 403
+
+        # Delete related records first to avoid foreign key constraints
+        # Delete order items (cascade will handle from orders, but being explicit)
+        OrderItem.query.filter(OrderItem.order.has(event_id=eid)).delete()
+        # Delete orders
+        Order.query.filter_by(event_id=eid).delete()
+        # Delete ticket types
+        TicketType.query.filter_by(event_id=eid).delete()
+
+        # Now delete the event
         db.session.delete(ev)
         db.session.commit()
         current_app.logger.info("events.delete id=%s by user=%s role=%s", event_id, get_jwt_identity(), role)

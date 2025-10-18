@@ -16,6 +16,7 @@ class Order(db.Model):
 
     user = db.relationship('User', backref=db.backref('orders', lazy=True))
     event = db.relationship('Event', backref=db.backref('orders', lazy=True))
+    items = db.relationship('OrderItem', backref=db.backref('order', lazy=True), cascade="all, delete-orphan")
 
 
 class OrderItem(db.Model):
