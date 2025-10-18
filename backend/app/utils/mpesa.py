@@ -11,6 +11,18 @@ SHORT_CODE = os.getenv('MPESA_SHORT_CODE', '')
 PASSKEY = os.getenv('MPESA_PASSKEY', '')
 CALLBACK_URL = os.getenv('MPESA_CALLBACK_URL', '')
 
+# Validate required environment variables
+if not CONSUMER_KEY:
+    raise ValueError("MPESA_CONSUMER_KEY environment variable is required")
+if not CONSUMER_SECRET:
+    raise ValueError("MPESA_CONSUMER_SECRET environment variable is required")
+if not SHORT_CODE:
+    raise ValueError("MPESA_SHORT_CODE environment variable is required")
+if not PASSKEY:
+    raise ValueError("MPESA_PASSKEY environment variable is required")
+if not CALLBACK_URL:
+    raise ValueError("MPESA_CALLBACK_URL environment variable is required")
+
 TOKEN_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials' if MPESA_ENV == 'sandbox' else 'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
 STK_URL = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest' if MPESA_ENV == 'sandbox' else 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
 
@@ -52,6 +64,17 @@ def initiate_stk_push(phone_msisdn: str, amount_kes: int, account_ref: str, desc
         "AccountReference": account_ref[:12],
         "TransactionDesc": description[:60]
     }
+
+    # Log the request details for debugging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"M-Pesa STK Push Request: {payload}")
+
     resp = requests.post(STK_URL, headers=headers, data=json.dumps(payload), timeout=30)
+
+    # Log the response for debugging
+    logger.info(f"M-Pesa STK Push Response Status: {resp.status_code}")
+    logger.info(f"M-Pesa STK Push Response Body: {resp.text}")
+
     resp.raise_for_status()
     return resp.json()

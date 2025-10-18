@@ -71,7 +71,7 @@ class MpesaInitiateResource(Resource):
         db.session.flush()
 
         try:
-            resp = initiate_stk_push(phone_msisdn=phone, amount_kes=amount_kes, account_ref=str(order.id), description=f"Event {event.title}")
+            resp = initiate_stk_push(phone_msisdn=phone, amount_kes=amount_kes, account_ref=str(order.id).replace('-', '')[:12], description=f"Event {event.title}")
             payment.status = 'processing'
             payment.merchant_request_id = resp.get('MerchantRequestID')
             payment.checkout_request_id = resp.get('CheckoutRequestID')
