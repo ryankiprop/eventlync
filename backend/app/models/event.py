@@ -22,8 +22,6 @@ class Event(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     organizer = db.relationship('User', backref=db.backref('events', lazy=True))
-    ticket_types = db.relationship('TicketType', backref=db.backref('event', lazy=True), cascade="all, delete-orphan")
-    orders = db.relationship('Order', backref=db.backref('event', lazy=True), cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Event {self.title}>"
