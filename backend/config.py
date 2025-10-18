@@ -33,7 +33,7 @@ class Config:
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     if not JWT_SECRET_KEY:
         raise ValueError("JWT_SECRET_KEY environment variable is required")
-    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 3600))
+    JWT_ACCESS_TOKEN_EXPIRES = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 604800))  # 7 days
     
     # Cloudinary Configuration
     CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
