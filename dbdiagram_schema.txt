@@ -1,0 +1,116 @@
+// EventLync Database Schema Diagram
+// Generated from SQLAlchemy models
+
+Table users {
+  id uuid [primary key]
+  email varchar(255) [unique, not null]
+  password_hash varchar(255) [not null]
+  first_name varchar(100)
+  last_name varchar(100)
+  role varchar(20) [not null, default: 'user']
+  avatar_url varchar(512)
+  created_at datetime [default: `now()`]
+  updated_at datetime [default: `now()`]
+
+  indexes {
+    email
+  }
+
+  note: 'User accounts for organizers and attendees'
+}
+
+Table events {
+  id uuid [primary key]
+  organizer_id uuid [ref: > users.id, not null]
+  title varchar(255) [not null]
+  description text
+  category varchar(100)
+  venue_name varchar(255)
+  address text
+  start_date datetime [not null]
+  end_date datetime [not null]
+  banner_image_url varchar(512)
+  is_published boolean [not null, default: false]
+  created_at datetime [default: `now()`]
+  updated_at datetime [default: `now()`]
+
+  indexes {
+    organizer_id
+  }
+
+  note: 'Event information including details, dates, and venue'
+}
+
+Table ticket_types {
+  id uuid [primary key]
+  event_id uuid [ref: > events.id, not null]
+  name varchar(100) [not null]
+  price int [not null] // price in cents
+  quantity_total int [not null, default: 0]
+  quantity_sold int [not null, default: 0]
+  created_at datetime [default: `now()`]
+  updated_at datetime [default: `now()`]
+
+  indexes {
+    event_id
+  }
+
+  note: 'Different ticket types for each event with pricing and inventory'
+}
+
+Table orders {
+  id uuid [primary key]
+  user_id uuid [ref: > users.id, not null]
+  event_id uuid [ref: > events.id, not null]
+  total_amount int [not null, default: 0] // in cents
+  status varchar(20) [not null, default: 'paid']
+  created_at datetime [default: `now()`]
+
+  indexes {
+    user_id
+    event_id
+  }
+
+  note: 'Purchase orders containing multiple ticket items'
+}
+
+Table order_items {
+  id uuid [primary key]
+  order_id uuid [ref: > orders.id, not null]
+  ticket_type_id uuid [ref: > ticket_types.id, not null]
+  quantity int [not null, default: 1]
+  unit_price int [not null, default: 0] // in cents
+  qr_code varchar(255)
+  checked_in boolean [not null, default: false]
+  checked_in_at datetime
+  checked_in_by uuid [ref: > users.id]
+
+  indexes {
+    order_id
+    ticket_type_id
+  }
+
+  note: 'Individual ticket purchases within an order, with check-in tracking'
+}
+
+Table payments {
+  id uuid [primary key]
+  order_id uuid [ref: > orders.id, not null]
+  provider varchar(50) [not null, default: 'mpesa']
+  amount int [not null, default: 0] // in cents
+  phone varchar(20)
+  status varchar(20) [not null, default: 'initiated']
+  merchant_request_id varchar(100)
+  checkout_request_id varchar(100)
+  result_code varchar(20)
+  result_desc varchar(255)
+  raw_callback text
+  created_at datetime [default: `now()`]
+
+  indexes {
+    order_id
+    checkout_request_id
+  }
+
+  note: 'Payment records for orders, primarily using M-Pesa'
+}

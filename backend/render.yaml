@@ -10,3 +10,25 @@ services:
     envVars:
       - key: DATABASE_URL
         value: postgresql+psycopg2://neondb_owner:npg_oVhL5pN9BblI@ep-withered-resonance-adm7679h-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+      - key: FRONTEND_URL
+        value: https://eventlync.vercel.app
+      - key: CORS_ORIGINS
+        value: https://eventlync.vercel.app
+      - key: SECRET_KEY
+        value: ee373b16cf08c04a7d0a28ccd95451cc
+      - key: JWT_SECRET_KEY
+        value: 66bb44870335a29ef4464ec83621a76b
+      - key: FLASK_ENV
+        value: production
+      - key: MPESA_ENV
+        value: sandbox
+      - key: MPESA_CONSUMER_KEY
+        value: AJEsyytSq0L10YIDB7WIJEfr4iRavYLJghJ2O7Tj5nHEQXhR
+      - key: MPESA_CONSUMER_SECRET
+        value: ijhUAXwAJ6qD6vvd2W08Atb24RBGH0xGnUeGCFrzBGFlxBcy3NXIqJWDMGuN8ymx
+      - key: MPESA_SHORT_CODE
+        value: 174379
+      - key: MPESA_PASSKEY
+        value: bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+      - key: MPESA_CALLBACK_URL
+        value: https://eventlync.onrender.com/api/payments/mpesa/callback
