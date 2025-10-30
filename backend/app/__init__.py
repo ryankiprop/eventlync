@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -27,7 +27,32 @@ def create_app():
         default_limits=["200 per day", "50 per hour"],
         storage_uri="memory://",
     )
-    CORS(app, supports_credentials=True, origins=app.config['CORS_ORIGINS'])
+    
+    # Configure CORS with explicit settings
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": app.config['CORS_ORIGINS'],
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "Authorization"],
+                "supports_credentials": True,
+                "expose_headers": ["Content-Disposition"]
+            }
+        }
+    )
+    
+    # Add CORS headers to all responses
+    @app.after_request
+    def after_request(response):
+        origin = request.headers.get('Origin')
+        if origin and origin in app.config['CORS_ORIGINS']:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response
+    
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
