@@ -3,7 +3,7 @@ from uuid import UUID as _UUID
 from datetime import datetime
 from flask import request
 from flask_restful import Resource
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..extensions import db
 from ..models import Event, TicketType, Order, OrderItem, User
 from sqlalchemy.orm import joinedload
@@ -14,7 +14,6 @@ from ..utils.qrcode_util import generate_ticket_qr
 order_schema = OrderSchema()
 orders_schema = OrderSchema(many=True)
 create_order_schema = CreateOrderSchema()
-FREE_MODE = (os.getenv('FREE_MODE') or '').lower() in ('1', 'true', 'yes')
 
 
 def _uuid(v):
@@ -27,55 +26,80 @@ def _uuid(v):
 class OrdersResource(Resource):
     @jwt_required()
     def post(self):
-        if not FREE_MODE:
-            return {"message": "Direct checkout is disabled. Use /api/payments/mpesa/initiate."}, 400
+        """Create a new order with ticket reservations."""
         json_data = request.get_json() or {}
         errors = create_order_schema.validate(json_data)
         if errors:
             return {"errors": errors}, 400
+            
         user_id = _uuid(get_jwt_identity())
         if not user_id:
             return {"message": "Invalid token"}, 400
+            
         event_id = _uuid(json_data.get('event_id'))
         if not event_id:
             return {"message": "Invalid event id"}, 400
+            
         event = Event.query.get(event_id)
         if not event:
             return {"message": "Event not found"}, 404
-        # Build order
+            
+        # Create order with paid status (free checkout)
         order = Order(user_id=user_id, event_id=event.id, total_amount=0, status='paid')
         db.session.add(order)
-        db.session.flush()  # get order.id
+        db.session.flush()
+        
         total = 0
-        # Validate and reserve tickets
+        # Process ticket items
         for item in json_data.get('items', []):
             tt_id = _uuid(item.get('ticket_type_id'))
             qty = int(item.get('quantity') or 0)
+            
             if not tt_id or qty <= 0:
                 db.session.rollback()
                 return {"message": "Invalid ticket item"}, 400
+                
             tt = TicketType.query.get(tt_id)
             if not tt or tt.event_id != event.id:
                 db.session.rollback()
                 return {"message": "Ticket type not found for event"}, 404
+                
             if tt.quantity_available < qty:
                 db.session.rollback()
                 return {"message": f"Insufficient availability for {tt.name}"}, 400
+                
+            # Calculate line total and update order total
             line_total = tt.price * qty
             total += line_total
-            oi = OrderItem(order_id=order.id, ticket_type_id=tt.id, quantity=qty, unit_price=tt.price)
+            
+            # Create order item
+            oi = OrderItem(
+                order_id=order.id, 
+                ticket_type_id=tt.id, 
+                quantity=qty, 
+                unit_price=tt.price
+            )
             db.session.add(oi)
-            db.session.flush()  # get oi.id
+            db.session.flush()
+            
+            # Generate QR code for the ticket
             oi.qr_code = generate_ticket_qr(order.id, oi.id, user_id)
+            
+            # Update ticket type sold count
             tt.quantity_sold = (tt.quantity_sold or 0) + qty
+        
+        # Update order total and commit transaction
         order.total_amount = total
         db.session.commit()
-        # Send confirmation (best-effort)
+        
+        # Send confirmation email (best-effort)
         try:
             user = User.query.get(user_id)
-            send_order_confirmation(user, order)
-        except Exception:
-            pass
+            if user and user.email:
+                send_order_confirmation(user, order)
+        except Exception as e:
+            print(f"Warning: Failed to send confirmation email: {str(e)}")
+            
         return {"order": order_schema.dump(order)}, 201
 
 
